@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
-# import matplotlib as plt
 import sys
 import matplotlib.pyplot as plt
-# from datasets import templates
+import argparse
+
+
+
 
 
 print("This is a Simple Scanner")
@@ -11,7 +13,7 @@ print("OpenCV version used: {}".format(cv2.__version__))
 
 # show image from a file
 def show_file_image(img, title):
-    image = cv2.imread(img,0)
+    image = cv2.imread(img, cv2.IMREAD_COLOR)
     image_resize = cv2.resize(image, (0,0), fx=0.25, fy=0.25)
     if image is None:
         sys.exit('Could not open or find the image!')
@@ -28,7 +30,6 @@ def show_live_image():
     while True:
         result, image = camera.read()
         cv2.imshow("Live Camera", image)
-        print(image)
         if cv2.waitKey(1) == 27: 
             break  # esc to quit
 
@@ -36,12 +37,27 @@ def show_live_image():
         
     return None
 
+    
+
+# ---- Get the Arucu markers ----
+# 1. specify aruco dictionary
+# 2. specify parameters
+# 3. detect markers
+
+
+def detect_aruco_markers(image):
+    aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_7X7_250)
+    parameters = cv2.aruco.DetectorParameters_create()
+    corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(image, aruco_dict, parameters=parameters)    
+    cv2.aruco.drawDetectedMarkers(image, corners, ids, (0,255,0))
+    cv2.imshow("Image with Aruco markers", image)
+  
+    return corners, ids, rejectedImgPoints
+
+
 # 2. Compute the homography
 
-def compute_homography(source_image, destination_image):
-
-    H = cv2.findHomography(source_image, destination_image)
-    print(H)
+def compute_homography(h_points_live_image, h_points_sample_image):
 
     '''
     HOMOGRAPHY MATRIX
@@ -49,25 +65,51 @@ def compute_homography(source_image, destination_image):
     xd        xs      
     yd  = H * ys
     1         1
-    
-    
     '''
 
+    print("h_points_live_image: {}".format(h_points_live_image))  
+    print("h_points_sample_image: {}".format(h_points_sample_image))  
 
-    return None #return the final image after apply the homography
-
-
-
-# Mat H = findHomography(objectPointsPlanar, imagePoints);
-
+    # H = cv2.findHomography(source_image, destination_image)
+    return  None #return the final image after apply the homography
 
 
 
+# detect aruco markers in an live image
+def detect_live_image_aruco():
 
+    camera = cv2.VideoCapture(0)
+    sample_image = '/home/pabs/PIV/datasets/InitialDataset/templates/template2_fewArucos.png'
 
-# 3. Get the Arucu markers
+    # get the points from the sample image
 
+    h_points_sample_image = []
+    image = cv2.imread(sample_image, cv2.IMREAD_COLOR)
+    corners, ids, rejected_points = detect_aruco_markers(image)
+    for i in range(len(ids)):
+        h_points_sample_image.append([(corners[i][0][0,0],corners[i][0][0,1]), ids[i][0]])
 
+    # real image computation
+    while True:
+        result, image = camera.read()
+        corners, ids, rejected_points = detect_aruco_markers(image)
+        h_points_live_image = []
+
+        # get the key points to compute the homography
+        if ids is not None:
+            for i in range(len(ids)):
+                h_points_live_image.append([(corners[i][0][0,0],corners[i][0][0,1]), ids[i][0]])
+
+        # h_points_sample_image = dete
+
+        compute_homography(h_points_live_image, h_points_sample_image) #compute homography
+
+        if cv2.waitKey(1) == 27: 
+            break  # esc to quit
+
+    cv2.destroyAllWindows()
+        
+    return None
 
 
 
@@ -91,35 +133,48 @@ def compute_homography(source_image, destination_image):
 
 
 
-CAMERA_MODE = 2
+'''
+CAMERA MODES:
 
-try:
+    0: webcam
+    1: image file
+
+'''
+
+
+CAMERA_MODE = 1
+
     
-    # get the source image
-    source_image = 0
-    
-    if CAMERA_MODE == 1:
-        source_img = show_live_image()
-    elif CAMERA_MODE == 2:
-        source_img ='/home/pabs/PIV/datasets/InitialDataset/templates/template1_manyArucos.png'
-        source_img = show_file_image(source_img, "Source image")
-    else:
-        print("Invalid camera mode")
+# get the source image
+source_image = 0
+
+template_image = cv2.imread('/home/pabs/PIV/datasets/InitialDataset/templates/template2_fewArucos.png',0)
+
+if CAMERA_MODE == 1:
+    source_img = detect_live_image_aruco()
+elif CAMERA_MODE == 2:
+    source_img ='/home/pabs/PIV/datasets/InitialDataset/templates/real_image_1.png'
+    source_img = show_file_image(source_img, "Source image")
+else:
+    print("Invalid camera mode")
+
+print("source_img: {}".format(source_img))
+corners, ids, rejection_points = detect_aruco_markers(source_img)
 
 
-    # get the destination image
-    image_resolution = source_img.shape
-    destination_image = np.zeros(image_resolution)
-
-    print(source_img)
-    print("Image resolution: {}".format(image_resolution))
-    show_file_image(destination_image, "Destination image")
 
 
-    # compute the homography
-    compute_homography(source_img, destination_image)
+
+# get the aruco marker of the template -> 4 points coordinates
+# get the arucor marker of the source image -> 4 points coordinates
+# get the homography matrix
 
 
-except:
-  print("An exception occurred")
+# # compute the homography
+# H = compute_homography(source_img, destination_image)
+# print("Homography matrix: {}".format(H))
+
+
+# except:
+#   print("An exception occurred")
  
