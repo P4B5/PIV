@@ -59,7 +59,7 @@ def detect_aruco_markers(image):
 
 # 2. Compute the homography
 
-def compute_homography(h_points_live_image, h_points_sample_image):
+def compute_homography(h_points_live_image, h_points_template_image):
 
     '''
     HOMOGRAPHY MATRIX
@@ -70,38 +70,85 @@ def compute_homography(h_points_live_image, h_points_sample_image):
     '''
 
     print("h_points_input_image: {}".format(h_points_live_image))  
-    print("h_points_template_image: {}".format(h_points_sample_image))  
+    print("h_points_template_image: {}".format(h_points_template_image))  
 
-    if len(h_points_live_image) == len(h_points_sample_image):
-        # get the points to compute the homography
-        xs = []
-        ys = []
-        xd = []
-        yd = []
-        for i in range(len(h_points_live_image)):
-            xd.append(h_points_live_image[i][0][0])
-            yd.append(h_points_live_image[i][0][1])
-            xs.append(h_points_sample_image[i][0][0])
-            ys.append(h_points_sample_image[i][0][1])
+    # get the points from the input image
+    xs_1 = h_points_live_image[0][0][0]
+    xs_2 = h_points_live_image[1][0][0]
+    xs_3 = h_points_live_image[2][0][0]
+    xs_4 = h_points_live_image[3][0][0]
+    ys_1 = h_points_live_image[0][0][1]
+    ys_2 = h_points_live_image[1][0][1]
+    ys_3 = h_points_live_image[2][0][1]
+    ys_4 = h_points_live_image[3][0][1]
 
-        # compute the homography
-        xs = np.array(xs)
-        ys = np.array(ys)
-        xd = np.array(xd)
-        yd = np.array(yd)
-        H = np.array([[np.sum(xs*xd), np.sum(xs*yd), np.sum(xs)], [np.sum(ys*xd), np.sum(ys*yd), np.sum(ys)], [np.sum(xd), np.sum(yd), len(xs)]])
-        H = np.linalg.inv(H)
-        H = H/H[2,2]
+    # get the points from the template image
+    xd_1 = h_points_template_image[0][0][0]
+    xd_2 = h_points_template_image[1][0][0]
+    xd_3 = h_points_template_image[2][0][0]
+    xd_4 = h_points_template_image[3][0][0]
+    yd_1 = h_points_template_image[0][0][1]
+    yd_2 = h_points_template_image[1][0][1]
+    yd_3 = h_points_template_image[2][0][1]
+    yd_4 = h_points_template_image[3][0][1]
 
-        # print(H)
-        # print("H: {}".format(H))
+    P = np.array([
+        [xs_1, ys_1, 1, 0, 0, 0, -xd_1*xs_1, -ys_1*xd_1, -xd_1],
+        [0, 0, 0, xs_1, ys_1, 1, -xs_1*ys_1, -yd_1*ys_1, -yd_1],
+        [xs_2, ys_2, 1, 0, 0, 0, -xd_2*xs_2, -ys_2*xd_2, -xd_2],
+        [0, 0, 0, xs_2, ys_2, 1, -xs_2*ys_2, -yd_2*ys_2, -yd_2],
+        [xs_3, ys_3, 1, 0, 0, 0, -xd_3*xs_3, -ys_3*xd_3, -xd_3],
+        [0, 0, 0, xs_3, ys_3, 1, -xs_3*ys_3, -yd_3*ys_3, -yd_3],
+        [xs_4, ys_4, 1, 0, 0, 0, -xd_4*xs_4, -ys_4*xd_4, -xd_4],
+        [0, 0, 0, xs_4, ys_4, 1, -xs_4*ys_4, -yd_4*ys_4, -yd_4]
+        ])
+
+    
+    [U, S, Vt] = np.linalg.svd(P)
+    print(Vt)
+    H = Vt[-1].reshape(3, 3)
+    H = H/H[-1,-1]
+    # H = np.linalg.inv(H)
+
+    # H =[[0.322458225645459,	10.5437738227079,	-2943.68591951408],
+    #     [-4.16259475079465,	3.99892442704985,	4310.31501556172],
+    #     [-9.69860740545962e-05,	0.00199300996332708,	1]]
+   
+    return H
 
 
-        # H = cv2.findHomography(source_image, destination_image)
-        return  H #return the final image after apply the homography
 
-    else:
-        return None
+
+    # if len(h_points_live_image) == len(h_points_sample_image):
+    #     # get the points to compute the homography
+    #     xs = []
+    #     ys = []
+    #     xd = []
+    #     yd = []
+    #     for i in range(len(h_points_live_image)):
+    #         xd.append(h_points_live_image[i][0][0])
+    #         yd.append(h_points_live_image[i][0][1])
+    #         xs.append(h_points_sample_image[i][0][0])
+    #         ys.append(h_points_sample_image[i][0][1])
+
+    #     # compute the homography
+    #     xs = np.array(xs)
+    #     ys = np.array(ys)
+    #     xd = np.array(xd)
+    #     yd = np.array(yd)
+    #     H = np.array([[np.sum(xs*xd), np.sum(xs*yd), np.sum(xs)], [np.sum(ys*xd), np.sum(ys*yd), np.sum(ys)], [np.sum(xd), np.sum(yd), len(xs)]])
+    #     H = np.linalg.inv(H)
+    #     H = H/H[2,2]
+
+    #     # print(H)
+    #     # print("H: {}".format(H))
+
+
+    # #     # H = cv2.findHomography(source_image, destination_image)
+    #     return  H #return the final image after apply the homography
+
+    # else:
+    #     return None
 
 
 # GET THE HOMOGRAPHY FROM A FIXED IMAGET
@@ -109,7 +156,7 @@ def detect_aruco_image():
 
     # 1. get the sample image
     template_image = '/home/pabs/PIV/datasets/InitialDataset/templates/template2_fewArucos.png'
-    input_image = '/home/pabs/PIV/datasets/InitialDataset/templates/real_image_1.png'
+    input_image_raw = '/home/pabs/PIV/datasets/InitialDataset/templates/real_image_2.png'
 
     # get the points from the template image
 
@@ -118,13 +165,22 @@ def detect_aruco_image():
 
 
     template_image = cv2.imread(template_image, cv2.IMREAD_COLOR)
-    # template_image = cv2.resize(template_image, image.shape[1::-1])
-    
-    corners, ids, rejected_points = detect_aruco_markers(template_image)
-    for i in range(len(ids)):
-        h_points_template_image.append([(corners[i][0][0,0],corners[i][0][0,1]), ids[i][0]])
+    template_image = cv2.resize(template_image, (0,0), fx=0.25, fy=0.25)
 
-    input_image = cv2.imread(input_image, cv2.IMREAD_COLOR)
+
+    corners, ids, rejected_points = detect_aruco_markers(template_image)
+    print("corners: {}".format(corners))
+    for i in range(len(ids)):
+            h_points_template_image.append([(corners[i][0][0,0],corners[i][0][0,1]), ids[0][0]])
+
+
+    print(h_points_template_image)
+
+    input_image = cv2.imread(input_image_raw, cv2.IMREAD_COLOR)
+    input_image_raw = cv2.imread(input_image_raw, cv2.IMREAD_COLOR)
+    input_image = cv2.resize(input_image, (0,0), fx=0.5, fy=0.5)
+    input_image_raw = cv2.resize(input_image_raw, (0,0), fx=0.5, fy=0.5)
+  
     corners, ids, rejected_points = detect_aruco_markers(input_image)
         
     # get the key points to compute the homography
@@ -133,37 +189,37 @@ def detect_aruco_image():
             h_points_input_image.append([(corners[i][0][0,0],corners[i][0][0,1]), ids[i][0]])
 
         # h_points_sample_image = dete
-
+   
     H = compute_homography(h_points_input_image, h_points_template_image) #compute homography
     print("H: {}".format(H))
+
+    # return None
 
     # get the new image
     # print("image shape: {}".format(image.shape))
     # print("sample_image.shape: {}".format(sample_image.shape))
-    blank_image = np.zeros(input_image.shape, np.uint8)
+    blank_image = np.zeros(template_image.shape, np.uint8)
+
+    # if (p.x < Xmin or p.x > Xmax or p.y < Ymin or p.y > Ymax):
+    #     return None 
+    
+
 
  
-    # if H is not None:
-    for i in range(input_image.shape[0]):
-        for j in range(input_image.shape[1]):
-            point = np.array([i, j, 1])
-            point = np.dot(H, point)
-            point = point/point[2]
-            point = point.astype(int)
-            print("coordinates after apply H {} {}".format((i,j),point))
-            blank_image[i, j] = input_image[i, j]
+    if H is not None:
+        for i in range(input_image_raw.shape[0]):
+            for j in range(input_image_raw.shape[1]):
+                p = np.array([j, i, 1])
+                point = np.dot(H, p)
+                # point = H @ np.array([i,  j, 1]).transpose()
+                point = point/point[-1]
+                point = point.astype(int)
+                if point[0] >= 0 and point[0] < blank_image.shape[0] and point[1] >= 0 and point[1] < blank_image.shape[1]:
+                    print("coordinates after apply H {} --->> {}".format((j,i),point))
+                    blank_image[point[0],point[1]] = input_image_raw[j, i]
+           
 
-
-    #             print("i: {}, j: {}".format(i,j))
-    #             x = np.array([j,i,1])
-    #             x = np.dot(H,x)
-    #             x = x/x[2]
-    #             x = x.astype(int)
-    #             if x[0] >= 0 and x[0] < template_image.shape[0] and x[1] >= 0 and x[1] < template_image.shape[1]:
-    #                 print("correct value!")
-    #                 blank_image[i,j] = input_image[x[1],x[0]]
-
-    cv2.imshow("input image copy", input_image)
+    cv2.imshow("input image copy", blank_image)
     cv2.waitKey(0)
 
 
@@ -215,22 +271,21 @@ def detect_live_image_aruco():
         H = compute_homography(h_points_live_image, h_points_sample_image) #compute homography
         print("H: {}".format(H))
 
-        # get the new image
-        # print("image shape: {}".format(image.shape))
-        # print("sample_image.shape: {}".format(sample_image.shape))
-        # blank_image = np.zeros(image.shape, np.uint8)
+        print("image shape: {}".format(image.shape))
+        print("sample_image.shape: {}".format(sample_image.shape))
+        blank_image = np.zeros(image.shape, np.uint8)
 
-        # if H is not None:
-        #     for i in range(blank_image.shape[0]):
-        #         for j in range(blank_image.shape[1]):
-        #             print("i: {}, j: {}".format(i,j))
-        #             x = np.array([j,i,1])
-        #             x = np.dot(H,x)
-        #             x = x/x[2]
-        #             x = x.astype(int)
-        #             blank_image[i,j] = image[x[1],x[0]]
+        if H is not None:
+            for i in range(blank_image.shape[0]):
+                for j in range(blank_image.shape[1]):
+                    print("i: {}, j: {}".format(i,j))
+                    x = np.array([j,i,1])
+                    x = np.dot(H,x)
+                    x = x/x[2]
+                    x = x.astype(int)
+                    blank_image[i,j] = image[x[1],x[0]]
 
-        # cv2.imshow("New image", blank_image)
+        cv2.imshow("New image", blank_image)
 
         if cv2.waitKey(1) == 27: 
             break  # esc to quit
