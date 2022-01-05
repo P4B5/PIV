@@ -11,14 +11,17 @@ print("number of arguments: {}".format(len(sys.argv)))
 
 if len(sys.argv) == 5:
     task = sys.argv[1]
-    template_path = sys.argv[2]
+    template_image = sys.argv[2]
     output_path = sys.argv[3]
-    input_path = sys.argv[4]
+    input_image_raw = sys.argv[4]
 
     print("task: {}".format(task))
-    print("template_path: {}".format(template_path))
+    print("template_path: {}".format(template_image))
     print("output_path: {}".format(output_path))
-    print("input_path: {}".format(input_path))
+    print("input_path: {}".format(input_image_raw))
+
+
+ 
 
 elif len(sys.argv) == 6:
     print("this is for exercise 4")
