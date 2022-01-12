@@ -23,6 +23,12 @@ pip install python-opencv
 pip install opencv-contrib-python
 pip install numpy
 
+
+TASKS:
+1. COMPUTE HOMOGRAHY USING ARUCO MARKERS
+2. COMPUTE HOMOGRAHY WITHOUT ARUCO MARKERS
+4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS
+
 '''
 
 
@@ -131,34 +137,100 @@ def detect_image_aruco(template_image, input_image_raw, output_path):
 ###############################################################
 
 
-if len(sys.argv) == 5:
+# function to detect key points in an image
+def key_point_detector(image):
+    img = cv2.imread(image)
+    img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    sift = cv2.SIFT_create()
+    kp = sift.detect(gray,None)
+    img=cv2.drawKeypoints(gray,kp,img)
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
+
+
+# function to detect edges in an image
+def canny_edge_detector(image):
+    img = cv2.imread(image)
+    img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray,100,200)
+    cv2.imshow('image', edges)
+    cv2.waitKey(0)
+
+# get the countours of the paper
+def get_contours(image):
+    img = cv2.imread(image)
+    img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+    imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresh = cv2.threshold(imgray, 127, 255, 0)
+    contours,hierachy=cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(img, contours, -1, (0,255,0), 3)
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
+
+    pass
+
+
+# apply RANSAC
+def apply_ransac(image):
+    pass
+
+# get the surface of the paper using plane filtering
+def get_sheet():
+    pass
+
+
+
+# input_image = "./template1_manyArucos.png" #template image
+input_image = "./demo_dataset/2.jpeg" #input image
+
+# input_image = cv2.resize(input_image, (0,0), fx=0.5, fy=0.5)
+
+get_contours(input_image)
+key_point_detector(input_image)
+canny_edge_detector(input_image) 
+
+
+
+
+
+# ----- EXECTUION AS THE DELIVER SPECIFICATIONS ----
+
+# if len(sys.argv) == 5:
     
-    task = sys.argv[1]
-    template_image = sys.argv[2]
-    output_path = sys.argv[3]
-    input_folder = sys.argv[4]
+#     task = sys.argv[1]
+#     template_image = sys.argv[2]
+#     output_path = sys.argv[3]
+#     input_folder = sys.argv[4]
 
-    if task == '1':
-        # check if the output directory exists
-        if os.path.isdir(output_path) == False:
-            os.mkdir(output_path) #create the output directory
+#     if task == '1':
+#         # check if the output directory exists
+#         if os.path.isdir(output_path) == False:
+#             os.mkdir(output_path) #create the output directory
 
-        # COMPUTE THE HOMOGRAPHY
-        for image in os.listdir(input_folder):
-            input_image_raw = input_folder + "/" + image     
-            source_img = detect_image_aruco(template_image, input_image_raw, output_path)
+#         # COMPUTE THE HOMOGRAPHY
+#         for image in os.listdir(input_folder):
+#             input_image_raw = input_folder + "/" + image     
+#             source_img = detect_image_aruco(template_image, input_image_raw, output_path)
 
-    if task == '2':
-        print("task 2")
-    if task == '3':
-        print("task 3")
+#     if task == '2':
+#         input_image = "/home/pabs/PIV/template1_manyArucos.png"
+#         print("task 2")
+        # for image in os.listdir(input_folder):
+        #     input_image_raw = input_folder + "/" + image     
+            # source_img = detect_image_aruco(template_image, input_image_raw, output_path)
+            # get_contours(input_image_raw)
+
+#     if task == '3':
+#         print("task 3")
    
-elif len(sys.argv) == 6:
-    print("task 4")
+# elif len(sys.argv) == 6:
+#     print("task 4")
 
-else:
-    print("ERROR: wrong number of arguments")
-    sys.exit(1) 
+# else:
+#     print("ERROR: wrong number of arguments")
+#     sys.exit(1) 
 
 
 
