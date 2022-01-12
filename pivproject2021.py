@@ -1,4 +1,3 @@
-
 import sys
 import cv2
 import cv2.aruco as aruco
@@ -131,7 +130,7 @@ def detect_image_aruco(template_image, input_image_raw, output_path):
 ###############################################################
 #
 #   
-#                          MAIN PROGRAM
+#                 DETECT IMPORTANT POINTS IMAGES
 #
 #
 ###############################################################
@@ -193,6 +192,17 @@ canny_edge_detector(input_image)
 
 
 
+
+
+
+
+###############################################################
+#
+#   
+#                          MAIN PROGRAM
+#
+#
+###############################################################
 
 
 # ----- EXECTUION AS THE DELIVER SPECIFICATIONS ----
