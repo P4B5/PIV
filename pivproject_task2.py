@@ -285,15 +285,22 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
     mat_1 = []
     mat_2 = []
 
-    for mat in matches:
+    img1_pt = np.zeros((len(matches), 2), dtype=np.float32)
+    img2_pt = np.zeros((len(matches), 2), dtype=np.float32)
+
+    for i, mat in enumerate(matches):
         img1_idx = mat.queryIdx
         img2_idx = mat.trainIdx
 
         (x1, y1) = kp1[img1_idx].pt
         (x2, y2) = kp2[img2_idx].pt
 
-        mat_1.append((x1, y1))
-        mat_2.append((x2, y2))
+        img1_pt[i, :] = kp1[mat.queryIdx].pt
+
+        img2_pt[i, :] = kp2[mat.trainIdx].pt
+
+        # mat_1.append((x1, y1))
+        # mat_2.append((x2, y2))
 
         # filter matches points
         cv2.circle(out, (int(x1), int(y1)), 4, (255, 0, 0), 1)
@@ -302,19 +309,21 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
         cv2.line(out, (int(x1), int(y1)), (int(x2) + cols, int(y2)), (0, 0, 255), 1)
 
 
-    print("matches image 1 {}".format(mat_1))
-    print("matches image 2 {}".format(mat_2))
+    # print("matches image 1 {}".format(mat_1))
+    # print("matches image 2 {}".format(mat_2))
 
     # remove points from image 2 which are out of the paper
     # detect corners of the paper
     # know if a point is inside the area of the paper
     # remove correspondant points from image 1
 
-    H = compute_homography(mat_1,mat_2) #compute homography
+    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
+
+    # H = compute_homography(mat_1[:4],mat_2[:4]) #compute homography
     print("homography {}".format(H))
     # warp the input image
     if H is not None:
-        final_img = cv2.warpPerspective(img2, H, img1.shape[1::-1])
+        final_img = cv2.warpPerspective(img2, H, (cols, rows))
         visualize_image(final_img)
         # name_of_image = os.path.basename(input_image_raw)
         # name_of_image = name_of_image
@@ -333,6 +342,10 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
 
 # apply RANSAC
 def apply_ransac(image):
+
+
+
+
     pass
 
 # get the surface of the paper using plane filtering
