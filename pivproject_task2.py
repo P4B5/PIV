@@ -1,4 +1,5 @@
 import sys
+from tkinter.tix import InputOnly
 import cv2
 import cv2.aruco as aruco
 import os
@@ -146,8 +147,8 @@ def get_binary_image(image):
 
 # function for initializing input images
 def image_init(input1, input2, rows, cols):
-    img1 = cv2.imread(input_image_1)
-    img2 = cv2.imread(input_image_2)
+    img1 = cv2.imread(input1)
+    img2 = cv2.imread(input2)
 
     img1= cv2.resize(img1, (cols, rows))
     img2= cv2.resize(img2, (cols , rows))
@@ -160,8 +161,6 @@ def image_init(input1, input2, rows, cols):
 # function to detect key points in an image
 def key_point_detector(image):
     img = image
-    #img = cv2.imread(image)
-    #img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     sift = cv2.SIFT_create()
     kp = sift.detect(gray,None)
@@ -174,23 +173,12 @@ def key_point_detector(image):
 
 # function to detect edges in an image
 def canny_edge_detector(image):
-
-    #img = cv2.imread(image)
-    #img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
-    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(image,240,350,L2gradient=1)
     return edges
-    # print(img.shape)
-    # print(edges.shape)
-    # cv2.imshow('image', edges)
-    # cv2.waitKey(0)
 
 # get the countours of the paper
 def get_contours(image):
     img = image
-    #img = cv2.imread(image)
-    #img= cv2.resize(img, (0,0), fx=0.5, fy=0.5)
-    # imgray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(image, 127, 255, 0)
     contours,hierachy=cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(img, contours, -1, (0,255,0), 3)
@@ -244,11 +232,17 @@ def detect_corners(image):
 
     return img
 
-    # visualize_image(img)
+
+def save_image(input_image_raw, output_path, image_to_save):
+    name_of_image = os.path.basename(input_image_raw)
+    name_of_image = name_of_image
+    output_path = output_path + "/" + name_of_image
+    print("image: {} ===> {} ".format(input_image_raw, output_path))    
+    print("===========================================================")
+    cv2.imwrite(output_path, image_to_save)
 
 
 def draw_rectangle(image):
-
     ret,thresh = cv2.threshold(image,127,255,0)
     im2,contours,hierarchy = cv2.findContours(thresh, 1, 2)
     cnt = contours[0]
@@ -270,8 +264,10 @@ def draw_rectangle(image):
     box = np.int0(box)
     cv2.drawContours(image,[box],0,(0,0,255),2)
 
+
+
 # function to draw image with matching key points
-def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
+def draw_matches(img1, img2, kp1, kp2, matches, rows, cols, output_path):
     # Initialize output image
     out = np.zeros((rows, 2*cols, 3), dtype='uint8')
 
@@ -281,9 +277,6 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
     # Place the next image to the right of it
     out[:rows,cols:] = np.dstack([img2])
 
-
-    mat_1 = []
-    mat_2 = []
 
     img1_pt = np.zeros((len(matches), 2), dtype=np.float32)
     img2_pt = np.zeros((len(matches), 2), dtype=np.float32)
@@ -296,11 +289,7 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
         (x2, y2) = kp2[img2_idx].pt
 
         img1_pt[i, :] = kp1[mat.queryIdx].pt
-
         img2_pt[i, :] = kp2[mat.trainIdx].pt
-
-        # mat_1.append((x1, y1))
-        # mat_2.append((x2, y2))
 
         # filter matches points
         cv2.circle(out, (int(x1), int(y1)), 4, (255, 0, 0), 1)
@@ -309,49 +298,21 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols):
         cv2.line(out, (int(x1), int(y1)), (int(x2) + cols, int(y2)), (0, 0, 255), 1)
 
 
-    # print("matches image 1 {}".format(mat_1))
-    # print("matches image 2 {}".format(mat_2))
-
     # remove points from image 2 which are out of the paper
     # detect corners of the paper
     # know if a point is inside the area of the paper
     # remove correspondant points from image 1
 
+    # compute the homgraphy
     H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
-
-    # H = compute_homography(mat_1[:4],mat_2[:4]) #compute homography
-    print("homography {}".format(H))
-    # warp the input image
+    
     if H is not None:
-        final_img = cv2.warpPerspective(img2, H, (cols, rows))
-        visualize_image(final_img)
-        # name_of_image = os.path.basename(input_image_raw)
-        # name_of_image = name_of_image
-        # output_path = output_path + "/" + name_of_image
-        # print("image: {} ===> {} ".format(input_image_raw, output_path))    
-        # print("===========================================================")
-        # cv2.imwrite(output_path, final_img)
-
-       
-    print("matches image 1 {}".format(mat_1))
-    print("matches image 2 {}".format(mat_2))
-
-   
-    cv2.imshow('output', out)
-    cv2.waitKey(0)
-
-# apply RANSAC
-def apply_ransac(image):
+        final_img = cv2.warpPerspective(img2, H, (cols, rows)) # warp the input image
+        save_image(input_image_raw, output_path, final_img) #save the new image on the output folder
 
 
-
-
-    pass
-
-# get the surface of the paper using plane filtering
-def get_sheet():
-    pass
-
+    # cv2.imshow('output', out)
+    # cv2.waitKey(0)
 
 
 
@@ -364,61 +325,52 @@ def get_sheet():
 ###############################################################
 
 
-input_image_1 = "./template2_fewArucos.png" #template image
-input_image_2 = "./demo_dataset/6.jpeg" #input image
-
-# dimension of images
-rows = 1000
-cols = 600
-
-img1_init, img2_init = image_init(input_image_1, input_image_2, rows, cols)
-
-img2 = get_binary_image(img2_init)
-visualize_image(img2_init)
-
-img2 = canny_edge_detector(img2_init)
-img1 = canny_edge_detector(img1_init)
-visualize_image(img1)
-visualize_image(img2)
-
-kp1, kp2, matches = find_matches(img1, img2)
-draw_matches(img1_init, img2_init, kp1, kp2, matches, rows, cols)
-
-
-
 # ----- EXECTUION AS THE DELIVER SPECIFICATIONS ----
 
-# if len(sys.argv) == 5:
+if len(sys.argv) == 5:
     
-#     task = sys.argv[1]
-#     template_image = sys.argv[2]
-#     output_path = sys.argv[3]
-#     input_folder = sys.argv[4]
+    task = sys.argv[1]
+    template_image = sys.argv[2]
+    output_path = sys.argv[3]
+    input_folder = sys.argv[4]
 
-#     if task == '1':
-#         # check if the output directory exists
-#         if os.path.isdir(output_path) == False:
-#             os.mkdir(output_path) #create the output directory
+    if task == '1':
+        # check if the output directory exists
+        if os.path.isdir(output_path) == False:
+            os.mkdir(output_path) #create the output directory
 
-#         # COMPUTE THE HOMOGRAPHY
-#         for image in os.listdir(input_folder):
-#             input_image_raw = input_folder + "/" + image     
-#             source_img = detect_image_aruco(template_image, input_image_raw, output_path)
+        # COMPUTE THE HOMOGRAPHY
+        for image in os.listdir(input_folder):
+            input_image_raw = input_folder + "/" + image     
+            source_img = detect_image_aruco(template_image, input_image_raw, output_path)
 
-#     if task == '2':
-#         input_image = "/home/pabs/PIV/template1_manyArucos.png"
-#         print("task 2")
-        # for image in os.listdir(input_folder):
-        #     input_image_raw = input_folder + "/" + image     
-            # source_img = detect_image_aruco(template_image, input_image_raw, output_path)
-            # get_contours(input_image_raw)
+    if task == '2':
+        if os.path.isdir(output_path) == False:
+            os.mkdir(output_path) #create the output directory
 
-#     if task == '3':
-#         print("task 3")
-   
-# elif len(sys.argv) == 6:
-#     print("task 4")
+        print("--> task 2")
+        for image in os.listdir(input_folder):
+            input_image_raw = input_folder + "/" + image     
+            
+            # dimension of images
+            rows = 1000
+            cols = 600
 
-# else:
-#     print("ERROR: wrong number of arguments")
-#     sys.exit(1) 
+            # initialize the images
+            img1_init, img2_init = image_init(template_image, input_image_raw, rows, cols)
+
+            # get edges of the image using canny edge detector
+            img2 = canny_edge_detector(img2_init)
+            img1 = canny_edge_detector(img1_init)
+
+            # draw matches
+            kp1, kp2, matches = find_matches(img1, img2)
+            draw_matches(img1_init, img2_init, kp1, kp2, matches, rows, cols, output_path)
+
+
+elif len(sys.argv) == 6:
+    print("task 4")
+
+else:
+    print("ERROR: wrong number of arguments")
+    sys.exit(1) 
