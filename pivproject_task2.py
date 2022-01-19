@@ -1,5 +1,6 @@
 import sys
 from tkinter.tix import InputOnly
+from typing import final
 import cv2
 import cv2.aruco as aruco
 import os
@@ -25,8 +26,8 @@ pip install numpy
 
 
 TASKS:
-1. COMPUTE HOMOGRAHY USING ARUCO MARKERS
-2. COMPUTE HOMOGRAHY WITHOUT ARUCO MARKERS
+1. COMPUTE HOMOGRAHY USING ARUCO MARKERS [x]
+2. COMPUTE HOMOGRAHY WITHOUT ARUCO MARKERS [x]
 4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS
 
 '''
@@ -139,7 +140,7 @@ def detect_image_aruco(template_image, input_image_raw, output_path):
 
 def get_binary_image(image):
     # image = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
-    thresh, image = cv2.threshold(image, 170, 255, cv2.THRESH_BINARY)
+    thresh, image = cv2.threshold(image, 120, 255, cv2.THRESH_BINARY)
     # cv2.imshow('image', im_bw)
     # cv2.waitKey(0)
     return image
@@ -168,12 +169,14 @@ def key_point_detector(image):
     cv2.imshow('image', img)
     cv2.waitKey(0)
 
-    return 
 
+def adaptative_gaussian_thres(image):
+    th3 = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,20)
+    return th3
 
 # function to detect edges in an image
 def canny_edge_detector(image):
-    edges = cv2.Canny(image,240,350,L2gradient=1)
+    edges = cv2.Canny(image,240,400,L2gradient=2)
     return edges
 
 # get the countours of the paper
@@ -264,10 +267,48 @@ def draw_rectangle(image):
     box = np.int0(box)
     cv2.drawContours(image,[box],0,(0,0,255),2)
 
+def harris_corner_detector(image):
+
+    thresh = 200
+    # Detector parameters
+    blockSize = 2
+    apertureSize = 3
+    k = 0.04
+    # Detecting corners
+    dst = cv2.cornerHarris(image, blockSize, apertureSize, k)
+    # Normalizing
+    dst_norm = np.empty(dst.shape, dtype=np.float32)
+    cv2.normalize(dst, dst_norm, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    dst_norm_scaled = cv2.convertScaleAbs(dst_norm)
+    # Drawing a circle around corners
+    for i in range(dst_norm.shape[0]):
+        for j in range(dst_norm.shape[1]):
+            if int(dst_norm[i,j]) > thresh:
+                cv2.circle(dst_norm_scaled, (j,i), 5, (255), 2)
+
+    return dst_norm_scaled
+
+
+def orb_detector(img1, img2):
+
+    # Initiate ORB detector
+    orb = cv2.ORB_create()
+    # find the keypoints and descriptors with ORB
+    kp1, des1 = orb.detectAndCompute(img1,None)
+    kp2, des2 = orb.detectAndCompute(img2,None)
+    # create BFMatcher object
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    # Match descriptors.
+    matches = bf.match(des1,des2)
+    # Sort them in the order of their distance.
+    matches = sorted(matches, key = lambda x:x.distance)
+    # Draw first 10 matches.
+    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    visualize_image(img3)
 
 
 # function to draw image with matching key points
-def draw_matches(img1, img2, kp1, kp2, matches, rows, cols, output_path):
+def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
     # Initialize output image
     out = np.zeros((rows, 2*cols, 3), dtype='uint8')
 
@@ -310,10 +351,8 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols, output_path):
         final_img = cv2.warpPerspective(img2, H, (cols, rows)) # warp the input image
         save_image(input_image_raw, output_path, final_img) #save the new image on the output folder
 
-
     # cv2.imshow('output', out)
     # cv2.waitKey(0)
-
 
 
 ###############################################################
@@ -359,12 +398,8 @@ if len(sys.argv) == 5:
             # initialize the images
             img1_init, img2_init = image_init(template_image, input_image_raw, rows, cols)
 
-            # get edges of the image using canny edge detector
-            img2 = canny_edge_detector(img2_init)
-            img1 = canny_edge_detector(img1_init)
-
             # draw matches
-            kp1, kp2, matches = find_matches(img1, img2)
+            kp1, kp2, matches = find_matches(img1_init, img2_init)
             draw_matches(img1_init, img2_init, kp1, kp2, matches, rows, cols, output_path)
 
 
