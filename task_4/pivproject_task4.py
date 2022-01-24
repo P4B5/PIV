@@ -2,10 +2,12 @@ import sys
 from tkinter import image_names
 from tkinter.tix import InputOnly
 from typing import final
+from webbrowser import get
 import cv2
 import cv2.aruco as aruco
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 '''
@@ -56,33 +58,32 @@ def detect_aruco_markers(image):
     return corners, ids, rejectedImgPoints
 
 
-# copute the homography
-def compute_homography(h_points_input_image, h_points_template_image):
+# copute thget_homography(h_points_input_image, h_points_template_image):
+# def compute_homography():
+#     '''
+#     HOMOGRAPHY MATRIX
 
-    '''
-    HOMOGRAPHY MATRIX
+#     xd        xs      
+#     yd  = H * ys
+#     1         1
+#     '''
 
-    xd        xs      
-    yd  = H * ys
-    1         1
-    '''
-
-    # get the P matrix
-    P = []
-    for i in range(len(h_points_input_image)):
-        xd_1 = h_points_input_image[i][0]
-        yd_1 = h_points_input_image[i][1]
-        xs_1 = h_points_template_image[i][0]
-        ys_1 = h_points_template_image[i][1]
-        P.append([xs_1, ys_1, 1, 0, 0, 0, -xs_1*xs_1, -ys_1*xd_1, -xd_1])
-        P.append([0, 0, 0, xs_1, ys_1, 1, -xs_1*ys_1, -yd_1*ys_1, -yd_1])
+#     # get the P matrix
+#     P = []
+#     for i in range(len(h_points_input_image)):
+#         xd_1 = h_points_input_image[i][0]
+#         yd_1 = h_points_input_image[i][1]
+#         xs_1 = h_points_template_image[i][0]
+#         ys_1 = h_points_template_image[i][1]
+#         P.append([xs_1, ys_1, 1, 0, 0, 0, -xs_1*xs_1, -ys_1*xd_1, -xd_1])
+#         P.append([0, 0, 0, xs_1, ys_1, 1, -xs_1*ys_1, -yd_1*ys_1, -yd_1])
    
-    P = np.array(P)
-    [U, S, Vt] = np.linalg.svd(P) #singular value decomposition
-    H = Vt[-1].reshape(3, 3) #last column of Vt is the last row of Vt
-    H = H/H[-1,-1] #normalize H
-    H = np.linalg.inv(H) #invert H
-    return H
+#     P = np.array(P)
+#     [U, S, Vt] = np.linalg.svd(P) #singular value decomposition
+#     H = Vt[-1].reshape(3, 3) #last column of Vt is the last row of Vt
+#     H = H/H[-1,-1] #normalize H
+#     H = np.linalg.inv(H) #invert H
+#     return H
 
 
 
@@ -229,28 +230,33 @@ def find_matches(img1, img2):
     kp2, des2 = sift.detectAndCompute(img2, None)
 
     bf = cv2.BFMatcher()
-
     matches = bf.match(des1, des2)
+    
+
     matches = sorted(matches,key=lambda x:x.distance)
 
     return kp1, kp2, matches
 
-# def find_matches_2(template, img1, img2):
-#     sift = cv2.SIFT_create()
 
-#     template_kp, template_des = sift.detectAndCompute(template, None)
-#     kp1, des1 = sift.detectAndCompute(img1, None)
-#     kp2, des2 = sift.detectAndCompute(img2, None)
 
-#     bf = cv2.BFMatcher()
+def find_matches_2(img1, img2):
+    sift = cv2.SIFT_create()
 
-#     matches_1 = bf.match(template_des, des1)
-#     matches_2 = bf.mathc(template_des, des2)
-#     matches_1 = sorted(matches_1,key=lambda x:x.distance)
-#     matches_2 = sorted(matches_2,key=lambda x:x.distance)
+    kp1, des1 = sift.detectAndCompute(img1, None)
+    kp2, des2 = sift.detectAndCompute(img2, None)
 
-#     return template_kp, kp1, kp2, matches_1, matches_2
+    bf = cv2.BFMatcher()
 
+    matches = bf.knnMatch(des1,des2, k=2)
+
+
+    good = []
+    for m in matches:
+        if (m[0].distance < 0.5*m[1].distance):
+            good.append(m)
+    matches = np.asarray(good)
+
+    return kp1, kp2, matches
 
 
 
@@ -328,22 +334,24 @@ def find_matches(img1, img2):
 #     return dst_norm_scaled
 
 
-# def orb_detector(img1, img2):
+def orb_detector(img1, img2):
 
-#     # Initiate ORB detector
-#     orb = cv2.ORB_create()
-#     # find the keypoints and descriptors with ORB
-#     kp1, des1 = orb.detectAndCompute(img1,None)
-#     kp2, des2 = orb.detectAndCompute(img2,None)
-#     # create BFMatcher object
-#     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-#     # Match descriptors.
-#     matches = bf.match(des1,des2)
-#     # Sort them in the order of their distance.
-#     matches = sorted(matches, key = lambda x:x.distance)
-#     # Draw first 10 matches.
-#     img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-#     visualize_image(img3)
+    # Initiate ORB detector
+    orb = cv2.ORB_create()
+    # find the keypoints and descriptors with ORB
+    kp1, des1 = orb.detectAndCompute(img1,None)
+    kp2, des2 = orb.detectAndCompute(img2,None)
+    # create BFMatcher object
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    # Match descriptors.
+    matches = bf.match(des1,des2)
+    # Sort them in the order of their distance.
+    matches = sorted(matches, key = lambda x:x.distance)
+    # Draw first 10 matches.
+    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    visualize_image(img3)
+
+    return kp1, kp2, matches
 
 
 # function to draw image with matching key points
@@ -384,16 +392,54 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
     # remove correspondant points from image 1
 
     # compute the homgraphy
-    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
-    
-    if H is not None:
-        final_img = cv2.warpPerspective(img2, H, (cols, rows)) # warp the input image
-        cv2.imshow('final_img', final_img)
-        cv2.waitKey(0)
-        # save_image(input_image_raw, output_path, final_img) #save the new image on the output folder
 
     cv2.imshow('output', out)
     cv2.waitKey(0)
+    return img1_pt, img2_pt
+
+     
+
+
+def draw_matches_2(img1, img2, kp1, kp2, matches, rows, cols,output_path):
+ 
+    if (len(matches) >= 4):
+        src = np.float32([ kp1[m.queryIdx].pt for m in matches[:,0] ]).reshape(-1,1,2)
+        dst = np.float32([ kp2[m.trainIdx].pt for m in matches[:,0] ]).reshape(-1,1,2)
+        H, masked = cv2.findHomography(src, dst, cv2.RANSAC, 5.0)
+    # else:
+    #     raise AssertionError('Can’t find enough keypoints.')
+
+        dst = cv2.warpPerspective(img1,H,((img1.shape[1] + img2.shape[1]), img2.shape[0])) #wraped image
+        dst[0:img2.shape[0], 0:img2.shape[1]] = img2 #stitched image
+        cv2.imwrite('output.jpg',dst)
+        plt.imshow(dst)
+        plt.show()
+
+        # return dst
+
+
+def get_blended_image(image1, image2):
+    alpha = 0.5
+    beta = (1.0 - alpha)
+    dst = cv2.addWeighted(image1, alpha, image2, beta, 0.0)
+    # visualize_image(dst)
+    return dst
+
+
+def get_homography(img1_pt, img2_pt, image,rows, cols):
+    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
+    if H is not None:
+        final_img = cv2.warpPerspective(image, H, (cols, rows)) # warp the input image
+        # cv2.imshow('final_img', final_img)
+        # cv2.waitKey(0)
+        return final_img
+        # save_image(input_image_raw, output_path, final_img) #save the new image on the output folder
+
+    return None
+  
+
+
+
 
 
 ###############################################################
@@ -460,7 +506,7 @@ elif len(sys.argv) == 6:
     # python pivproject2021.py 4 /home/pabs/PIV/task_4/TwoCameras/ulisboatemplate.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa2/output  /home/pabs/PIV/task_4/TwoCameras/ulisboa2/phone2 /home/pabs/PIV/task_4/TwoCameras/ulisboa2/photo2
     # python pivproject2021.py 4 /home/pabs/PIV/task_4/GoogleGlass/template_glass.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa2/output  /home/pabs/PIV/task_4/GoogleGlass/glass /home/pabs/PIV/task_4/GoogleGlass/nexus
     # python pivproject2021.py <task> <path_to_template> <path_to_output_folder> <path_to_input_folder>
-
+    # python pivproject_task4.py 4 /home/pabs/PIV/task_4/TwoCameras/ulisboatemplate.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa1/output  /home/pabs/PIV/task_4/TwoCameras/ulisboa1/phone /home/pabs/PIV/task_4/TwoCameras/ulisboa1/photo
     # create the output directory
     if os.path.isdir(output_path) == False:
         os.mkdir(output_path) #create the output directory
@@ -489,12 +535,35 @@ elif len(sys.argv) == 6:
         # initialize the images
         template, img1_init, img2_init = image_init_2(template_image, image_lst_1[i],image_lst_2[i] , rows, cols)
 
-        # draw matches
-        kp1_1, kp2_1, matches_1 = find_matches(template, img1_init)
-        kp1_2, kp2_2, matches_2 = find_matches(template, img2_init)
+        # img =get_blended_image(img1_init, img2_init)
 
-        draw_matches(template, img1_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
-        draw_matches(template, img2_init, kp1_2, kp2_2, matches_2, rows, cols, output_path)
+        # exit(0)
+
+        # kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
+        kp1_1, kp2_1, matches_1 = orb_detector(img1_init,img2_init)
+
+        img1_pt, img2_pt = draw_matches(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        h_image = get_homography(img1_pt, img2_pt, img2_init, rows, cols)
+        # visualize_image(h_image)
+
+        sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        sharpen = cv2.filter2D(h_image, -1, sharpen_kernel)
+        visualize_image(sharpen)
+
+        kp1_1, kp2_1, matches_1 = orb_detector(template, h_image)
+
+        # kp1_1, kp2_1, matches_1 = find_matches(h_image, template)
+        img1_pt, img2_pt = draw_matches(h_image, template, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
+        visualize_image(h_image)
+
+
+
+        # kp1_1, kp2_1, matches_1 = find_matches(template, img1_init)
+        # kp1_2, kp2_2, matches_2 = find_matches(template, img2_init)
+
+        # draw_matches(template, img1_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        # draw_matches(template, img2_init, kp1_2, kp2_2, matches_2, rows, cols, output_path)
 
 else:
     print("ERROR: wrong number of arguments or arguments format")
