@@ -32,7 +32,7 @@ pip install numpy
 TASKS:
 1. COMPUTE HOMOGRAHY USING ARUCO MARKERS [x]
 2. COMPUTE HOMOGRAHY WITHOUT ARUCO MARKERS [x]
-4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS
+4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS 
 
 '''
 
@@ -56,35 +56,6 @@ def detect_aruco_markers(image):
     corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(image, aruco_dict, parameters=parameters)    
     aruco.drawDetectedMarkers(image, corners, ids, (0,255,0))
     return corners, ids, rejectedImgPoints
-
-
-# copute thget_homography(h_points_input_image, h_points_template_image):
-# def compute_homography():
-#     '''
-#     HOMOGRAPHY MATRIX
-
-#     xd        xs      
-#     yd  = H * ys
-#     1         1
-#     '''
-
-#     # get the P matrix
-#     P = []
-#     for i in range(len(h_points_input_image)):
-#         xd_1 = h_points_input_image[i][0]
-#         yd_1 = h_points_input_image[i][1]
-#         xs_1 = h_points_template_image[i][0]
-#         ys_1 = h_points_template_image[i][1]
-#         P.append([xs_1, ys_1, 1, 0, 0, 0, -xs_1*xs_1, -ys_1*xd_1, -xd_1])
-#         P.append([0, 0, 0, xs_1, ys_1, 1, -xs_1*ys_1, -yd_1*ys_1, -yd_1])
-   
-#     P = np.array(P)
-#     [U, S, Vt] = np.linalg.svd(P) #singular value decomposition
-#     H = Vt[-1].reshape(3, 3) #last column of Vt is the last row of Vt
-#     H = H/H[-1,-1] #normalize H
-#     H = np.linalg.inv(H) #invert H
-#     return H
-
 
 
 
@@ -135,14 +106,6 @@ def detect_image_aruco(template_image, input_image_raw, output_path):
 ###############################################################
 
 
-# def get_binary_image(image):
-#     # image = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
-#     thresh, image = cv2.threshold(image, 120, 255, cv2.THRESH_BINARY)
-#     # cv2.imshow('image', im_bw)
-#     # cv2.waitKey(0)
-#     return image
-
-
 def save_image(input_image_raw, output_path, image_to_save):
     name_of_image = os.path.basename(input_image_raw)
     name_of_image = name_of_image
@@ -188,28 +151,6 @@ def image_init_2(template, input1, input2, rows, cols):
 
 
 
-
-# def adaptative_gaussian_thres(image):
-#     th3 = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,20)
-#     return th3
-
-# # function to detect edges in an image
-# def canny_edge_detector(image):
-#     edges = cv2.Canny(image,240,400,L2gradient=2)
-#     return edges
-
-# # get the countours of the paper
-# def get_contours(image):
-#     img = image
-#     ret, thresh = cv2.threshold(image, 127, 255, 0)
-#     contours,hierachy=cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-#     cv2.drawContours(img, contours, -1, (0,255,0), 3)
-#     cv2.imshow('image', img)
-#     cv2.waitKey(0)
-
-#     pass
-
-
 # function to detect key points in an image
 def key_point_detector(image):
     img = image
@@ -231,7 +172,6 @@ def find_matches(img1, img2):
 
     bf = cv2.BFMatcher()
     matches = bf.match(des1, des2)
-    
 
     matches = sorted(matches,key=lambda x:x.distance)
 
@@ -246,9 +186,7 @@ def find_matches_2(img1, img2):
     kp2, des2 = sift.detectAndCompute(img2, None)
 
     bf = cv2.BFMatcher()
-
     matches = bf.knnMatch(des1,des2, k=2)
-
 
     good = []
     for m in matches:
@@ -261,97 +199,6 @@ def find_matches_2(img1, img2):
 
 
 
-# def median_filter(image):
-#     image = cv2.medianBlur(image,5)
-#     return image
-
-
-# def gaussian_bluring(image):
-#     image = cv2.GaussianBlur(image,(5,5),0)
-#     return image
-
-# def averaging_filter(image):
-#     kernel = np.ones((3,3),np.float32)/10
-#     image = cv2.filter2D(image,-1,kernel)
-#     return image
-
-# def detect_corners(image):
-#     img = cv2.imread(image)
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-#     gray = np.float32(gray)
-#     dst = cv2.cornerHarris(gray,2,3,0.04)
-#     dst = cv2.dilate(dst,None)
-
-#     img[dst > 0.01 * dst.max()] = [0,0,255]
-
-#     return img
-
-
-
-
-
-# def draw_rectangle(image):
-#     ret,thresh = cv2.threshold(image,127,255,0)
-#     im2,contours,hierarchy = cv2.findContours(thresh, 1, 2)
-#     cnt = contours[0]
-#     M = cv2.moments(cnt)
-#     print( M )
-
-#     area = cv2.contourArea(cnt)
-
-#     perimeter = cv2.arcLength(cnt,True)
-
-#     cx = int(M['m10']/M['m00'])
-#     cy = int(M['m01']/M['m00'])
-
-#     epsilon = 0.1*cv2.arcLength(cnt,True)
-#     pprox = cv2.approxPolyDP(cnt,epsilon,True)
-
-#     rect = cv2.minAreaRect(cnt)
-#     box = cv2.boxPoints(rect)
-#     box = np.int0(box)
-#     cv2.drawContours(image,[box],0,(0,0,255),2)
-
-# def harris_corner_detector(image):
-
-#     thresh = 200
-#     # Detector parameters
-#     blockSize = 2
-#     apertureSize = 3
-#     k = 0.04
-#     # Detecting corners
-#     dst = cv2.cornerHarris(image, blockSize, apertureSize, k)
-#     # Normalizing
-#     dst_norm = np.empty(dst.shape, dtype=np.float32)
-#     cv2.normalize(dst, dst_norm, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-#     dst_norm_scaled = cv2.convertScaleAbs(dst_norm)
-#     # Drawing a circle around corners
-#     for i in range(dst_norm.shape[0]):
-#         for j in range(dst_norm.shape[1]):
-#             if int(dst_norm[i,j]) > thresh:
-#                 cv2.circle(dst_norm_scaled, (j,i), 5, (255), 2)
-
-#     return dst_norm_scaled
-
-
-def orb_detector(img1, img2):
-
-    # Initiate ORB detector
-    orb = cv2.ORB_create()
-    # find the keypoints and descriptors with ORB
-    kp1, des1 = orb.detectAndCompute(img1,None)
-    kp2, des2 = orb.detectAndCompute(img2,None)
-    # create BFMatcher object
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    # Match descriptors.
-    matches = bf.match(des1,des2)
-    # Sort them in the order of their distance.
-    matches = sorted(matches, key = lambda x:x.distance)
-    # Draw first 10 matches.
-    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    visualize_image(img3)
-
-    return kp1, kp2, matches
 
 
 # function to draw image with matching key points
@@ -397,8 +244,6 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
     cv2.waitKey(0)
     return img1_pt, img2_pt
 
-     
-
 
 def draw_matches_2(img1, img2, kp1, kp2, matches, rows, cols,output_path):
  
@@ -415,7 +260,7 @@ def draw_matches_2(img1, img2, kp1, kp2, matches, rows, cols,output_path):
         plt.imshow(dst)
         plt.show()
 
-        # return dst
+        return dst
 
 
 def get_blended_image(image1, image2):
@@ -426,8 +271,46 @@ def get_blended_image(image1, image2):
     return dst
 
 
+
+     
+def orb_detector(img1, img2):
+
+    # Initiate ORB detector
+    orb = cv2.ORB_create()
+    # find the keypoints and descriptors with ORB
+    kp1, des1 = orb.detectAndCompute(img1,None)
+    kp2, des2 = orb.detectAndCompute(img2,None)
+    # create BFMatcher object
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    # Match descriptors.
+    matches = bf.match(des1,des2)
+    # Sort them in the order of their distance.
+    matches = sorted(matches, key = lambda x:x.distance)
+    # Draw first 10 matches.
+    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    visualize_image(img3)
+
+    print(kp1)
+    print(kp2)
+    print(matches)
+
+    img1_pt = np.zeros((len(matches), 2), dtype=np.float32)
+    img2_pt = np.zeros((len(matches), 2), dtype=np.float32)
+
+    for i, mat in enumerate(matches):
+        img1_pt[i, :] = kp1[mat.queryIdx].pt
+        img2_pt[i, :] = kp2[mat.trainIdx].pt
+
+    print(img1_pt)
+    print(img2_pt)
+
+    return img1_pt, img2_pt
+    # return kp1, kp2, matches
+
+
+
 def get_homography(img1_pt, img2_pt, image,rows, cols):
-    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
+    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC,ransacReprojThreshold=2,maxIters=300)
     if H is not None:
         final_img = cv2.warpPerspective(image, H, (cols, rows)) # warp the input image
         # cv2.imshow('final_img', final_img)
@@ -438,6 +321,47 @@ def get_homography(img1_pt, img2_pt, image,rows, cols):
     return None
   
 
+# def compute_kh(img1, img2):
+
+#     MIN_MATCH_COUNT = 10
+#     # img1 = cv2.imread('box.png',0)          # queryImage
+#     # img2 = cv2.imread('box_in_scene.png',0) # trainImage
+#     # Initiate SIFT detector
+#     sift = cv2.SIFT_create()
+#     # find the keypoints and descriptors with SIFT
+#     kp1, des1 = sift.detectAndCompute(img1,None)
+#     kp2, des2 = sift.detectAndCompute(img2,None)
+#     FLANN_INDEX_KDTREE = 1
+#     index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+#     search_params = dict(checks = 50)
+#     flann = cv2.FlannBasedMatcher(index_params, search_params)
+#     matches = flann.knnMatch(des1,des2,k=2)
+#     # store all the good matches as per Lowe's ratio test.
+#     good = []
+#     for m,n in matches:
+#         if m.distance < 0.7*n.distance:
+#             good.append(m)
+
+#         if len(good)>MIN_MATCH_COUNT:
+#             src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+#             dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+#             M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+#             matchesMask = mask.ravel().tolist()
+#             h,w = img1.shape
+#             pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+#             dst = cv2.perspectiveTransform(pts,M)
+#             img2 = cv2.polylines(img2,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+#     else:
+#         print( "Not enough matches are found - {}/{}".format(len(good), MIN_MATCH_COUNT) )
+#         matchesMask = None
+
+
+#     draw_params = dict(matchColor = (0,255,0), # draw matches in green color
+#                     singlePointColor = None,
+#                     matchesMask = matchesMask, # draw only inliers
+#                     flags = 2)
+#     img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
+#     plt.imshow(img3, 'gray'),plt.show()
 
 
 
@@ -539,21 +463,24 @@ elif len(sys.argv) == 6:
 
         # exit(0)
 
+        # compute_kh(img1_init, img2_init)
+
         # kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
-        kp1_1, kp2_1, matches_1 = orb_detector(img1_init,img2_init)
-
-        img1_pt, img2_pt = draw_matches(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        img1_pt, img2_pt = orb_detector(img1_init,img2_init)
+        # dst = draw_matches_2(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        # img1_pt, img2_pt = draw_matches(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, img2_init, rows, cols)
-        # visualize_image(h_image)
+        visualize_image(h_image)
 
-        sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-        sharpen = cv2.filter2D(h_image, -1, sharpen_kernel)
-        visualize_image(sharpen)
+        # sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+        # sharpen = cv2.filter2D(h_image, -1, sharpen_kernel)
+        # visualize_image(sharpen)
 
-        kp1_1, kp2_1, matches_1 = orb_detector(template, h_image)
+        # # compute_kh(template_image, h_image)
 
-        # kp1_1, kp2_1, matches_1 = find_matches(h_image, template)
-        img1_pt, img2_pt = draw_matches(h_image, template, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        img1_pt, img2_pt = orb_detector(template, h_image)
+        # # kp1_1, kp2_1, matches_1 = find_matches(template, h_image)
+        # img1_pt, img2_pt = draw_matches(h_image, template, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
         visualize_image(h_image)
 
