@@ -437,7 +437,19 @@ def get_homography(img1_pt, img2_pt, image,rows, cols):
 
     return None
   
+def MSE_compare(img1, img2, rows, cols):
+    MSE = 0
+    for i in range(rows):
+        for j in range(cols):
+            MSE = MSE + abs(img1[i][j] - img2[i][j])
+    return MSE
 
+def MSE_compare2(img1, img2, rows, cols):
+    MSE = 0
+    for i in range(rows-1):
+        for j in range(cols-1):
+            MSE = MSE + abs((img1[i][j] + img1[i+1][j] + img1[i][j+1] + img1[i+1][j+1]) - (img2[i][j] + img2[i+1][j] + img2[i][j+1] + img2[i+1][j+1]))
+    return MSE
 
 
 
