@@ -320,7 +320,14 @@ def get_homography(img1_pt, img2_pt, image,rows, cols):
 
     return None
   
+def MSE_compare(img1, img2, rows, cols):
+    MSE = 0
+    for i in range(rows):
+        for j in range(cols):
+            MSE = MSE + abs(img1[i][j] - img2[i][j])
+    return MSE
 
+<<<<<<< HEAD
 # def compute_kh(img1, img2):
 
 #     MIN_MATCH_COUNT = 10
@@ -362,6 +369,14 @@ def get_homography(img1_pt, img2_pt, image,rows, cols):
 #                     flags = 2)
 #     img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
 #     plt.imshow(img3, 'gray'),plt.show()
+=======
+def MSE_compare2(img1, img2, rows, cols):
+    MSE = 0
+    for i in range(rows-1):
+        for j in range(cols-1):
+            MSE = MSE + abs((img1[i][j] + img1[i+1][j] + img1[i][j+1] + img1[i+1][j+1]) - (img2[i][j] + img2[i+1][j] + img2[i][j+1] + img2[i+1][j+1]))
+    return MSE
+>>>>>>> 4a3a8a795c72dd07e57c84c5733f461933dd09e0
 
 
 
