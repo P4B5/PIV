@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 
 '''
-
 --- GROUP NUMBER 13 ---
 
 Jonas Rogde Jørgensen           -- ist1101351
@@ -359,7 +358,6 @@ def task_2(template_image, output_path):
 
 
 def task_4(template_image, output_path):
-    print("--> task 4")
     input_folder_1 = sys.argv[4]   # get the input folder from the command line
     input_folder_2 = sys.argv[5]   # get the input folder from the command line
 
