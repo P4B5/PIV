@@ -4,6 +4,7 @@ from tkinter.tix import InputOnly
 from typing import final
 from webbrowser import get
 import cv2
+from numpy import save
 import cv2.aruco as aruco
 import os
 import numpy as np
@@ -154,7 +155,7 @@ def image_init_2(template, input1, input2, rows, cols):
 
 # function to find matches between keypoints of two images
 def find_matches(img1, img2):
-    sift = cv2.SIFT_create(nfeatures=300, contrastThreshold=0.1, edgeThreshold=0.01, sigma=3)
+    sift = cv2.SIFT_create(nfeatures=500, contrastThreshold=0.05, edgeThreshold=0.01, sigma=2)
 
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
@@ -380,7 +381,9 @@ elif len(sys.argv) == 6:
         template, img1_init, img2_init = image_init_2(template_image, image_lst_1[i],image_lst_2[i] , rows, cols)
 
      
-        img1_pt, img2_pt = orb_detector(img1_init,img2_init)
+        # img1_pt, img2_pt = orb_detector(img1_init,img2_init)
+        kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
+        img1_pt, img2_pt = draw_matches(img1_init,img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, img2_init, rows, cols)
         visualize_image(h_image)
 
@@ -392,6 +395,7 @@ elif len(sys.argv) == 6:
         img1_pt, img2_pt = draw_matches(template,h_image, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
         visualize_image(h_image)
+        save_image()
 
 else:
     print("ERROR: wrong number of arguments or arguments format")
