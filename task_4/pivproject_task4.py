@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+
 '''
 
 --- GROUP NUMBER 13 ---
@@ -146,7 +147,7 @@ def image_init_2(template, input1, input2, rows, cols):
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
-
+    # return tmp, img1, img2
     return tmp, gray1, gray2
 
 
@@ -165,7 +166,7 @@ def key_point_detector(image):
 
 # function to find matches between keypoints of two images
 def find_matches(img1, img2):
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(nfeatures=300, contrastThreshold=0.1, edgeThreshold=0.01, sigma=3)
 
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
@@ -174,6 +175,19 @@ def find_matches(img1, img2):
     matches = bf.match(des1, des2)
 
     matches = sorted(matches,key=lambda x:x.distance)
+
+    # img1_pt = np.zeros((len(matches), 2), dtype=np.float32)
+    # img2_pt = np.zeros((len(matches), 2), dtype=np.float32)
+
+    # for i, mat in enumerate(matches):
+    #     img1_pt[i, :] = kp1[mat.queryIdx].pt
+    #     img2_pt[i, :] = kp2[mat.trainIdx].pt
+
+    # print(img1_pt)
+    # print(img2_pt)
+    
+
+    # return img1_pt, img2_pt
 
     return kp1, kp2, matches
 
@@ -276,7 +290,7 @@ def get_blended_image(image1, image2):
 def orb_detector(img1, img2):
 
     # Initiate ORB detector
-    orb = cv2.ORB_create()
+    orb = cv2.ORB_create(nfeatures=400, edgeThreshold=1)
     # find the keypoints and descriptors with ORB
     kp1, des1 = orb.detectAndCompute(img1,None)
     kp2, des2 = orb.detectAndCompute(img2,None)
@@ -310,7 +324,10 @@ def orb_detector(img1, img2):
 
 
 def get_homography(img1_pt, img2_pt, image,rows, cols):
-    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC,ransacReprojThreshold=2,maxIters=300)
+    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
+
+    print(mask)
+
     if H is not None:
         final_img = cv2.warpPerspective(image, H, (cols, rows)) # warp the input image
         # cv2.imshow('final_img', final_img)
@@ -327,7 +344,6 @@ def MSE_compare(img1, img2, rows, cols):
             MSE = MSE + abs(img1[i][j] - img2[i][j])
     return MSE
 
-<<<<<<< HEAD
 # def compute_kh(img1, img2):
 
 #     MIN_MATCH_COUNT = 10
@@ -369,16 +385,47 @@ def MSE_compare(img1, img2, rows, cols):
 #                     flags = 2)
 #     img3 = cv2.drawMatches(img1,kp1,img2,kp2,good,None,**draw_params)
 #     plt.imshow(img3, 'gray'),plt.show()
-=======
 def MSE_compare2(img1, img2, rows, cols):
     MSE = 0
     for i in range(rows-1):
         for j in range(cols-1):
             MSE = MSE + abs((img1[i][j] + img1[i+1][j] + img1[i][j+1] + img1[i+1][j+1]) - (img2[i][j] + img2[i+1][j] + img2[i][j+1] + img2[i+1][j+1]))
     return MSE
->>>>>>> 4a3a8a795c72dd07e57c84c5733f461933dd09e0
 
 
+def compute_stitching(img1, img2):
+
+    # # stitcher= cv2.Stitcher_create()
+    # # status, img = stitcher.stitch([img1, img2])
+    # retval, img = cv2.Stitcher.stitch(img1, img2, mode="pano")
+
+    # if retval != cv2.Stitcher_OK:
+    #     print("INCORRECT STITCH")
+    # return img
+
+    img1=cv2.resize(img1,(0,0),fx=0.4,fy=0.4)
+    img2=cv2.resize(img2,(0,0),fx=0.4,fy=0.4)
+    # cv2.imshow("img1", img1)
+    # cv2.waitKey(0)
+    # cv2.imshow("img2", img2)
+    # cv2.waitKey(0)
+    # pano = []
+    stitchy=cv2.Stitcher_create()
+    (dummy,output)=stitchy.stitch([img1, img2])
+    print(output)
+    
+    if dummy != cv2.STITCHER_OK:
+    # checking if the stitching procedure is successful
+    # .stitch() function returns a true value if stitching is
+    # done successfully
+        print("stitching ain't successful")
+    else:
+        print('Your Panorama is ready!!!')
+        
+        # final output
+        cv2.imshow('final result',output)
+        
+        cv2.waitKey(0)
 
 
 ###############################################################
@@ -420,8 +467,8 @@ if len(sys.argv) == 5:
             input_image_raw = input_folder + "/" + image     
             
             # dimension of images
-            rows = 1000
-            cols = 600
+            rows = 1200
+            cols = 800
 
             # initialize the images
             img1_init, img2_init = image_init(template_image, input_image_raw, rows, cols)
@@ -457,7 +504,7 @@ elif len(sys.argv) == 6:
         image_lst_1.append(input_folder_1 + "/" + image1)
 
     for image2 in os.listdir(input_folder_2):
-        image_lst_2.append(input_folder_2 + "/" + image1)  
+        image_lst_2.append(input_folder_2 + "/" + image2)  
 
 
     dataset_len = 0
@@ -468,8 +515,8 @@ elif len(sys.argv) == 6:
 
     for i in range(dataset_len):
         # dimension of images
-        rows = 1000
-        cols = 600
+        rows = 800
+        cols = 400
 
         # initialize the images
         template, img1_init, img2_init = image_init_2(template_image, image_lst_1[i],image_lst_2[i] , rows, cols)
@@ -480,7 +527,12 @@ elif len(sys.argv) == 6:
 
         # compute_kh(img1_init, img2_init)
 
+        # img = compute_stitching(img1_init, img2_init)
+        # cv2.imshow("image", img)
+        # cv2.waitKey(0)
+
         # kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
+        # img1_pt, img2_pt = find_matches(img1_init,img2_init)
         img1_pt, img2_pt = orb_detector(img1_init,img2_init)
         # dst = draw_matches_2(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         # img1_pt, img2_pt = draw_matches(img1_init, img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
@@ -493,11 +545,18 @@ elif len(sys.argv) == 6:
 
         # # compute_kh(template_image, h_image)
 
-        img1_pt, img2_pt = orb_detector(template, h_image)
+        kp1_1, kp2_1, matches_1 = find_matches(template, h_image)
+        # img1_pt, img2_pt = find_matches(img1_init,img2_init)
+        # img1_pt, img2_pt = orb_detector(template, h_image)
         # # kp1_1, kp2_1, matches_1 = find_matches(template, h_image)
-        # img1_pt, img2_pt = draw_matches(h_image, template, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+        img1_pt, img2_pt = draw_matches(template,h_image, kp1_1, kp2_1, matches_1, rows, cols, output_path)
+       
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
         visualize_image(h_image)
+
+        # get enought keypoints
+        # remove outliers
+        # compute homography
 
 
 
