@@ -1,5 +1,6 @@
 import sys
 import cv2
+# from dbus import NameExistsException
 from numpy import save
 import cv2.aruco as aruco
 import os
@@ -151,7 +152,7 @@ def image_init_2(template, input1, input2, rows, cols):
 
 # function to find matches between keypoints of two images
 def find_matches(img1, img2):
-    sift = cv2.SIFT_create(nfeatures=500, contrastThreshold=0.05, edgeThreshold=0.01, sigma=2)
+    sift = cv2.SIFT_create(nfeatures=450,contrastThreshold=0.01, edgeThreshold=0.01, sigma=3)
 
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
@@ -205,8 +206,8 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
 
     # compute the homgraphy
 
-    cv2.imshow('output', out)
-    cv2.waitKey(0)
+    # cv2.imshow('output', out)
+    # cv2.waitKey(0)
     return img1_pt, img2_pt
 
 
@@ -251,8 +252,6 @@ def orb_detector(img1, img2):
 
 def get_homography(img1_pt, img2_pt, image,rows, cols):
     H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
-
-    print(mask)
 
     if H is not None:
         final_img = cv2.warpPerspective(image, H, (cols, rows)) # warp the input image
@@ -370,6 +369,7 @@ elif len(sys.argv) == 6:
     elif(len(image_lst_1) > len(image_lst_2)):
         dataset_len = len(image_lst_2)
 
+    n = 0
     for i in range(dataset_len):
         # dimension of images
         rows = 800
@@ -383,7 +383,7 @@ elif len(sys.argv) == 6:
         kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
         img1_pt, img2_pt = draw_matches(img1_init,img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, img2_init, rows, cols)
-        visualize_image(h_image)
+        # visualize_image(h_image)
 
         # sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
         # sharpen = cv2.filter2D(h_image, -1, sharpen_kernel)
@@ -392,8 +392,9 @@ elif len(sys.argv) == 6:
         kp1_1, kp2_1, matches_1 = find_matches(template, h_image)
         img1_pt, img2_pt = draw_matches(template,h_image, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
-        visualize_image(h_image)
-        save_image()
+        # visualize_image(h_image)
+        save_image(str(n)+".png", output_path, h_image)
+        n = n + 1
 
 else:
     print("ERROR: wrong number of arguments or arguments format")
