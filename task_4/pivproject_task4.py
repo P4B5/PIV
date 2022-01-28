@@ -353,10 +353,12 @@ elif len(sys.argv) == 6:
     image_lst_2 = []
 
     for image1 in os.listdir(input_folder_1):
-        image_lst_1.append(input_folder_1 + "/" + image1)
+        if ((image1[-4:] == ".jpg") or (image1[-5:] == ".jpeg") or (image1[-4:] == ".png")):
+            image_lst_1.append(input_folder_1 + "/" + image1)
 
     for image2 in os.listdir(input_folder_2):
-        image_lst_2.append(input_folder_2 + "/" + image2)  
+        if ((image2[-4:] == ".jpg") or (image2[-5:] == ".jpeg") or (image2[-4:] == ".png")):
+            image_lst_2.append(input_folder_2 + "/" + image2)  
 
     image_lst_1.sort()
     image_lst_2.sort()
