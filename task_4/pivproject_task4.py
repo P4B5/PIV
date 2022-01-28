@@ -1,8 +1,4 @@
 import sys
-from tkinter import image_names
-from tkinter.tix import InputOnly
-from typing import final
-from webbrowser import get
 import cv2
 from numpy import save
 import cv2.aruco as aruco
