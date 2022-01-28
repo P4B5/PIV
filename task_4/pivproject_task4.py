@@ -393,7 +393,7 @@ elif len(sys.argv) == 6:
         img1_pt, img2_pt = draw_matches(template,h_image, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
         visualize_image(h_image)
-        save_image()
+        save_image(image_lst_1[i], output_path, h_image)
 
 else:
     print("ERROR: wrong number of arguments or arguments format")
