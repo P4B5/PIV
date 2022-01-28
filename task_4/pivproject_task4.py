@@ -506,6 +506,8 @@ elif len(sys.argv) == 6:
     for image2 in os.listdir(input_folder_2):
         image_lst_2.append(input_folder_2 + "/" + image2)  
 
+    image_lst_1.sort()
+    image_lst_2.sort()
 
     dataset_len = 0
     if (len(image_lst_1) <= len(image_lst_2)):
