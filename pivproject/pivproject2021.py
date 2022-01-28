@@ -1,6 +1,5 @@
 import sys
 import cv2
-# from dbus import NameExistsException
 from numpy import save
 import cv2.aruco as aruco
 import os
@@ -30,14 +29,12 @@ pip install numpy
 TASKS:
 1. COMPUTE HOMOGRAHY USING ARUCO MARKERS [x]
 2. COMPUTE HOMOGRAHY WITHOUT ARUCO MARKERS [x]
-4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS 
+4. COMPUTE HOMOGRAHY USING 2 RGB CAMERAS [x]
 
 '''
 
 
 print("OpenCV version used: {}".format(cv2.__version__))
-
-
 
 ###############################################################
 #
@@ -182,7 +179,7 @@ def image_init_2(template, input1, input2, rows, cols):
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
     tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
-    # return tmp, img1, img2
+ 
     return tmp, gray1, gray2
 
 
@@ -201,16 +198,12 @@ def find_matches(img1, img2):
     return kp1, kp2, matches
 
 
-
-
 # function to draw image with matching key points
 def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
     # Initialize output image
     out = np.zeros((rows, 2*cols, 3), dtype='uint8')
-
     # Place the first image to the left
     out[:rows,:cols] = np.dstack([img1])
-
     # Place the next image to the right of it
     out[:rows,cols:] = np.dstack([img2])
 
@@ -234,81 +227,17 @@ def draw_matches(img1, img2, kp1, kp2, matches, rows, cols,output_path):
 
         cv2.line(out, (int(x1), int(y1)), (int(x2) + cols, int(y2)), (0, 0, 255), 1)
 
-
-    # remove points from image 2 which are out of the paper
-    # detect corners of the paper
-    # know if a point is inside the area of the paper
-    # remove correspondant points from image 1
-
-    # compute the homgraphy
-
-    # cv2.imshow('output', out)
-    # cv2.waitKey(0)
     return img1_pt, img2_pt
-
-
-def orb_detector(img1, img2):
-
-    # Initiate ORB detector
-    orb = cv2.ORB_create(nfeatures=400, edgeThreshold=1)
-    # find the keypoints and descriptors with ORB
-    kp1, des1 = orb.detectAndCompute(img1,None)
-    kp2, des2 = orb.detectAndCompute(img2,None)
-    # create BFMatcher object
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    # Match descriptors.
-    matches = bf.match(des1,des2)
-    # Sort them in the order of their distance.
-    matches = sorted(matches, key = lambda x:x.distance)
-    # Draw first 10 matches.
-    img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    visualize_image(img3)
-
-    print(kp1)
-    print(kp2)
-    print(matches)
-
-    img1_pt = np.zeros((len(matches), 2), dtype=np.float32)
-    img2_pt = np.zeros((len(matches), 2), dtype=np.float32)
-
-    for i, mat in enumerate(matches):
-        img1_pt[i, :] = kp1[mat.queryIdx].pt
-        img2_pt[i, :] = kp2[mat.trainIdx].pt
-
-    print(img1_pt)
-    print(img2_pt)
-
-    return img1_pt, img2_pt
-    # return kp1, kp2, matches
-
 
 
 def get_homography(img1_pt, img2_pt, image,rows, cols):
-    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC)
+    H, mask = cv2.findHomography(img2_pt, img1_pt, cv2.RANSAC) #compute the homography applying ransac
     if H is not None:
         final_img = cv2.warpPerspective(image, H, (cols, rows)) # warp the input image
         return final_img
        
     return None
   
-def MSE_compare(img1, img2, rows, cols):
-    MSE = 0
-    for i in range(rows):
-        for j in range(cols):
-            MSE = MSE + abs(img1[i][j] - img2[i][j])
-    return MSE
-
-
-def MSE_compare2(img1, img2, rows, cols):
-    MSE = 0
-    for i in range(rows-1):
-        for j in range(cols-1):
-            MSE = MSE + abs((img1[i][j] + img1[i+1][j] + img1[i][j+1] + img1[i+1][j+1]) - (img2[i][j] + img2[i+1][j] + img2[i][j+1] + img2[i+1][j+1]))
-    return MSE
-
-
-
-
 
 ###############################################################
 #
@@ -319,7 +248,7 @@ def MSE_compare2(img1, img2, rows, cols):
 ###############################################################
 
 
-
+# ------ TASK 1 ----------
 def task_1(template_image, output_path):
     # check if the output directory exists
     if os.path.isdir(output_path) == False:
@@ -330,6 +259,7 @@ def task_1(template_image, output_path):
         input_image_raw = input_folder + "/" + image     
         source_img = compute_homography_aruco(template_image, input_image_raw, output_path)
 
+# ------ TASK 2 ----------
 def task_2(template_image, output_path):
     if os.path.isdir(output_path) == False:
         os.mkdir(output_path) #create the output directory
@@ -341,7 +271,6 @@ def task_2(template_image, output_path):
         # dimension of images
         rows = 1200
         cols = 800
-
         # initialize the images
         img1_init, img2_init = image_init(template_image, input_image_raw, rows, cols)
 
@@ -349,30 +278,15 @@ def task_2(template_image, output_path):
         kp1, kp2, matches = find_matches(img1_init, img2_init)
         img1_pt, img2_pt = draw_matches(img1_init, img2_init, kp1, kp2, matches, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, img2_init,rows, cols)
-        # visualize_image(h_image)
+        #save the image
         if h_image is not None:
             save_image(input_image_raw, output_path, h_image)
 
-
-
-
-
+# ------ TASK 4 ----------
 def task_4(template_image, output_path):
     input_folder_1 = sys.argv[4]   # get the input folder from the command line
     input_folder_2 = sys.argv[5]   # get the input folder from the command line
 
-    print("task: ", task)
-    print("template image: ", template_image)
-    print("output_path: ", output_path)
-    print("input folder 1: ", input_folder_1)
-    print("input folder 2: ", input_folder_2)
-
-    # python pivproject2021.py 4 /home/pabs/PIV/task_4/TwoCameras/ulisboatemplate.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa2/output  /home/pabs/PIV/task_4/TwoCameras/ulisboa2/phone2 /home/pabs/PIV/task_4/TwoCameras/ulisboa2/photo2
-    # python pivproject2021.py 4 /home/pabs/PIV/task_4/GoogleGlass/template_glass.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa2/output  /home/pabs/PIV/task_4/GoogleGlass/glass /home/pabs/PIV/task_4/GoogleGlass/nexus
-    # python pivproject2021.py <task> <path_to_template> <path_to_output_folder> <path_to_input_folder>
-    # python pivproject_task4.py 4 /home/pabs/PIV/task_4/TwoCameras/ulisboatemplate.jpg /home/pabs/PIV/task_4/TwoCameras/ulisboa1/output  /home/pabs/PIV/task_4/TwoCameras/ulisboa1/phone /home/pabs/PIV/task_4/TwoCameras/ulisboa1/photo
-    
-    
     # create the output directory
     if os.path.isdir(output_path) == False:
         os.mkdir(output_path) #create the output directory
@@ -380,6 +294,7 @@ def task_4(template_image, output_path):
     image_lst_1 = []
     image_lst_2 = []
 
+    #chech the input is an image
     for image1 in os.listdir(input_folder_1):
         if ((image1[-4:] == ".jpg") or (image1[-5:] == ".jpeg") or (image1[-4:] == ".png")):
             image_lst_1.append(input_folder_1 + "/" + image1)
@@ -391,13 +306,13 @@ def task_4(template_image, output_path):
     image_lst_1.sort()
     image_lst_2.sort()
 
+    #have the same number of images in both datasets
     dataset_len = 0
     if (len(image_lst_1) <= len(image_lst_2)):
         dataset_len = len(image_lst_1)
     elif(len(image_lst_1) > len(image_lst_2)):
         dataset_len = len(image_lst_2)
 
-    n = 0
     for i in range(dataset_len):
         # dimension of images
         rows = 800
@@ -407,20 +322,16 @@ def task_4(template_image, output_path):
         template, img1_init, img2_init = image_init_2(template_image, image_lst_1[i],image_lst_2[i] , rows, cols)
 
      
-        # img1_pt, img2_pt = orb_detector(img1_init,img2_init)
+        # -- get the homography between two input images
         kp1_1, kp2_1, matches_1 = find_matches(img1_init, img2_init)
         img1_pt, img2_pt = draw_matches(img1_init,img2_init, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, img2_init, rows, cols)
-        # visualize_image(h_image)
-
-        # sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-        # sharpen = cv2.filter2D(h_image, -1, sharpen_kernel)
-        # visualize_image(sharpen)
-
+    
+        #--- get the homography between the result image and the template
         kp1_1, kp2_1, matches_1 = find_matches(template, h_image)
         img1_pt, img2_pt = draw_matches(template,h_image, kp1_1, kp2_1, matches_1, rows, cols, output_path)
         h_image = get_homography(img1_pt, img2_pt, h_image,rows, cols)
-        # visualize_image(h_image)
+
         if h_image is not None:
             save_image(image_lst_1[i], output_path, h_image)
 
@@ -443,14 +354,14 @@ if len(sys.argv) == 5:
     input_folder = sys.argv[4]   # get the input folder from the command line
     if task == '1':
         print("--> task 1")
-        task_1(template_image, output_path)
+        task_1(template_image, output_path) #execute task 1
     if task == '2':
         print("--> task 2")
-        task_2(template_image, output_path)
+        task_2(template_image, output_path) #executte task 2
     
 elif len(sys.argv) == 6:
     print("--> task 4")
-    task_4(template_image, output_path)
+    task_4(template_image, output_path) #execute task 4
 else:
     print("ERROR: wrong number of arguments or arguments format")
     sys.exit(1) 
